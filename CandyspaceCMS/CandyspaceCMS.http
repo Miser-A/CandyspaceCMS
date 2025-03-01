@@ -1,0 +1,6 @@
+@CandyspaceCMS_HostAddress = http://localhost:5274
+
+GET {{CandyspaceCMS_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
