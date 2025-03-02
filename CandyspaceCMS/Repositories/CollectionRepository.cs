@@ -2,75 +2,77 @@
 using Sitecore.Data;
 using Sitecore.Data.Items;
 using Sitecore.SecurityModel;
+using System.Collections.Generic;
 
 namespace CandyspaceCMS.Repositories
 {
-    public class CollectionRepository
+    private readonly ISitecoreService _sitecoreService;
+
+    private readonly ICacheService _cache;
+
+    public CollectionRepository(ISitecoreService sitecoreService, ICacheService cacheService)
     {
-        private readonly Database _database;
+        _sitecoreService = sitecoreService;
 
-        public CollectionRepository()
+        _cache = cacheService;
+    }
+
+    public Item CreateCollection(string title, string ownerId)
+    {
+        using (new SecurityDisabler())
         {
-            _database = Sitecore.Configuration.Factory.GetDatabase("master");
+            Item parentItem = _sitecoreService.GetItem("/sitecore/content/DigitalArchives/Collections");
+
+            TemplateID collectionTemplate = new TemplateID(new ID("{YOUR-COLLECTION-TEMPLATE-ID}"));
+            Item newCollection = parentItem.Add(title, collectionTemplate);
+
+            newCollection.Editing.BeginEdit();
+            newCollection["Owner"] = ownerId;
+            newCollection["CreatedDate"] = DateTime.UtcNow.ToString("o");
+            newCollection.Editing.EndEdit();
+
+            return newCollection;
         }
+    }
 
-        public Item CreateCollection(string title, string ownerId)
+    public Item? GetCollectionById(string collectionId)
+    {
+        return _sitecoreService.GetItem(new ID(collectionId));
+    }
+
+    public List<Item> GetCollectionsByOwner(string ownerId, int page, int pageSize)
+    {
+        string cacheKey = $"collections-{ownerId}-page{page}";
+
+        if (_cache.Contains(cacheKey))
+            return _cache.Get<List<Item>>(cacheKey);
+
+        var query = $"/sitecore/content/DigitalArchives/Collections//*[@Owner='{ownerId}']";
+        var collections = Sitecore.Context.Database.SelectItems(query)
+                        .Skip((page - 1) * pageSize)
+                        .Take(pageSize)
+                        .ToList();
+
+        _cache.Add(cacheKey, collections, TimeSpan.FromMinutes(10));
+        return collections;
+    }
+
+    public bool AddItemToCollection(string collectionId, string itemTitle, string itemType, string itemUrl)
+    {
+        using (new SecurityDisabler())
         {
-            using (new SecurityDisabler()) // Bypass Sitecore security for content changes
-            {
-                Item parentItem = _database.GetItem("/sitecore/content/DigitalArchives/Collections");
+            Item collection = _sitecoreService.GetItem(new ID(collectionId));
+            if (collection == null) return false;
 
-                TemplateID collectionTemplate = new TemplateID(new ID("{YOUR-COLLECTION-TEMPLATE-ID}"));
-                Item newCollection = parentItem.Add(title, collectionTemplate);
+            TemplateID itemTemplate = new TemplateID(new ID("{GUID goes here}"));
+            Item newItem = collection.Add(itemTitle, itemTemplate);
 
-                newCollection.Editing.BeginEdit();
-                newCollection["Owner"] = ownerId;
-                newCollection["CreatedDate"] = DateTime.UtcNow.ToString("o");
-                newCollection.Editing.EndEdit();
+            newItem.Editing.BeginEdit();
+            newItem["ItemType"] = itemType;
+            newItem["ItemUrl"] = itemUrl;
+            newItem.Editing.EndEdit();
 
-                return newCollection;
-            }
-        }
-
-        public Item? GetCollectionById(string collectionId)
-        {
-            return _database.GetItem(new ID(collectionId));
-        }
-
-        public List<Item> GetCollectionsByOwner(string ownerId)
-        {
-            string cacheKey = $"collections-{ownerId}-page{page}";
-
-            if (_cache.Contains(cacheKey))
-                return _cache.Get<List<Item>>(cacheKey);
-
-            var query = $"/sitecore/content/DigitalArchive/Collections//*[@Owner='{ownerId}']";
-            var collections = Sitecore.Context.Database.SelectItems(query)
-                            .Skip((page - 1) * pageSize)
-                            .Take(pageSize)
-                            .ToList();
-
-            _cache.Add(cacheKey, collections, TimeSpan.FromMinutes(10)); // Cache for 10 mins
-            return collections;
-        }
-
-        public bool AddItemToCollection(string collectionId, string itemTitle, string itemType, string itemUrl)
-        {
-            using (new SecurityDisabler())
-            {
-                Item collection = _database.GetItem(new ID(collectionId));
-                if (collection == null) return false;
-
-                TemplateID itemTemplate = new TemplateID(new ID("{GUID goes here}"));
-                Item newItem = collection.Add(itemTitle, itemTemplate);
-
-                newItem.Editing.BeginEdit();
-                newItem["ItemType"] = itemType;
-                newItem["ItemUrl"] = itemUrl;
-                newItem.Editing.EndEdit();
-
-                return true;
-            }
+            return true;
         }
     }
 }

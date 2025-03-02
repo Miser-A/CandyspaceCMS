@@ -9,25 +9,23 @@ namespace CandyspaceCMS.Controllers
     [Route("api/collections")]
     public class CollectionsController : ControllerBase
     {
-        private readonly CollectionRepository _repository;
+        private readonly ICollectionRepository _collectionRepository;
 
-        public CollectionsController()
+        public CollectionsController(ICollectionRepository collectionRepository)
         {
-            _repository = new CollectionRepository();
+            _collectionRepository = collectionRepository;
         }
 
-        // 1️⃣ Create a new collection
         [HttpPost("create")]
         public IActionResult CreateCollection([FromBody] CreateCollectionRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.OwnerId))
                 return BadRequest("Title and OwnerId are required.");
 
-            var collectionItem = _repository.CreateCollection(request.Title, request.OwnerId);
+            var collectionItem = _collectionRepository.CreateCollection(request.Title, request.OwnerId);
             return Ok(new { CollectionId = collectionItem.ID.ToString(), Message = "Collection created successfully" });
         }
 
-        // 2️⃣ Retrieve all collections for a user
         [HttpGet]
         public IActionResult GetCollections(int page = 1, int pageSize = 10)
         {
@@ -35,28 +33,26 @@ namespace CandyspaceCMS.Controllers
             if (string.IsNullOrWhiteSpace(ownerId))
                 return Unauthorized("User is not authenticated.");
 
-            var collections = _repository.GetCollectionsByOwner(ownerId, page, pageSize);
+            var collections = _collectionRepository.GetCollectionsByOwner(ownerId, page, pageSize);
             return Ok(collections);
         }
 
-        // 3️⃣ Add an item to an existing collection
         [HttpPut("{id}/items")]
         public IActionResult AddItemToCollection(string id, [FromBody] AddItemRequest request)
         {
-            string ownerId = User.Identity.Name; // Get the logged-in user’s ID
-            var collection = _repository.GetCollectionById(id);
+            string ownerId = User.Identity.Name;
+            var collection = _collectionRepository.GetCollectionById(id);
 
             if (collection == null) return NotFound("Collection not found.");
             if (collection["Owner"] != ownerId) return Forbid("Access denied.");
 
-            bool success = _repository.AddItemToCollection(id, request.Title, request.ItemType, request.ItemUrl);
+            bool success = _collectionRepository.AddItemToCollection(id, request.Title, request.ItemType, request.ItemUrl);
             if (!success) return StatusCode(500, "Error adding item.");
 
             return Ok(new { Message = "Item added successfully" });
         }
     }
 
-    // DTOs (Data Transfer Objects) for request validation
     public class CreateCollectionRequest
     {
         public string Title { get; set; }
@@ -66,7 +62,7 @@ namespace CandyspaceCMS.Controllers
     public class AddItemRequest
     {
         public string Title { get; set; }
-        public string ItemType { get; set; }  // e.g., "Image", "Document"
+        public string ItemType { get; set; }
         public string ItemUrl { get; set; }
     }
 }
