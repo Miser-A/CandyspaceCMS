@@ -6,6 +6,7 @@ using CandyspaceCMS.Models;
 using CandyspaceCMS.Data;
 using System;
 using System.Text;
+using CandyspaceCMS.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,10 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
+builder.Services.AddMemoryCache();  // Built-in .NET caching
+builder.Services.AddSingleton<ICacheService, CacheService>();
+
+
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
