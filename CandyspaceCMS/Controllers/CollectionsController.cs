@@ -1,4 +1,5 @@
-﻿using CandyspaceCMS.Repositories;
+﻿using CandyspaceCMS.Models.Requests;
+using CandyspaceCMS.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -53,16 +54,4 @@ namespace CandyspaceCMS.Controllers
         }
     }
 
-    public class CreateCollectionRequest
-    {
-        public string Title { get; set; }
-        public string OwnerId { get; set; }
-    }
-
-    public class AddItemRequest
-    {
-        public string Title { get; set; }
-        public string ItemType { get; set; }
-        public string ItemUrl { get; set; }
-    }
 }
