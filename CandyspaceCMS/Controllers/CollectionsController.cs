@@ -32,7 +32,7 @@ namespace CandyspaceCMS.Controllers
         [HttpGet]
         public IActionResult GetCollections(int page = 1, int pageSize = 10)
         {
-            string ownerId = User.Identity.Name;
+            string? ownerId = User.Identity?.Name;
             if (string.IsNullOrWhiteSpace(ownerId))
                 return Unauthorized("User is not authenticated.");
 
@@ -54,7 +54,7 @@ namespace CandyspaceCMS.Controllers
         [HttpPut("{id}/items")]
         public IActionResult AddItemToCollection(string id, [FromBody] AddItemRequest request)
         {
-            string ownerId = User.Identity.Name;
+            string? ownerId = User.Identity?.Name;
             var collection = _collectionRepository.GetCollectionById(id);
 
             if (collection == null) return NotFound("Collection not found.");

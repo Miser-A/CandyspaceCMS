@@ -48,7 +48,11 @@ namespace CandyspaceCMS.Repositories
             string cacheKey = $"collections-{ownerId}-page{page}";
 
             if (_cache.Contains(cacheKey))
-                return _cache.Get<List<Item>>(cacheKey);
+            {
+                var cachedCollections = _cache.Get<List<Item>>(cacheKey);
+                if (cachedCollections != null)
+                    return cachedCollections;
+            }
 
             var query = $"/sitecore/content/DigitalArchives/Collections//*[@Owner='{ownerId}']";
             var collections = Sitecore.Context.Database.SelectItems(query)
@@ -75,6 +79,18 @@ namespace CandyspaceCMS.Repositories
                 newItem["ItemUrl"] = itemUrl;
                 newItem.Editing.EndEdit();
 
+                return true;
+            }
+        }
+
+        public bool DeleteCollection(string collectionId)
+        {
+            using (new SecurityDisabler()) // Ensure we have permission to delete
+            {
+                Item collection = _sitecoreService.GetItem(new ID(collectionId));
+                if (collection == null) return false;
+
+                collection.Delete();
                 return true;
             }
         }

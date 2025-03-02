@@ -9,5 +9,7 @@ namespace CandyspaceCMS.Repositories
         Item? GetCollectionById(string collectionId);
         List<Item> GetCollectionsByOwner(string ownerId, int page, int pageSize);
         bool AddItemToCollection(string collectionId, string itemTitle, string itemType, string itemUrl);
+        bool DeleteCollection(string collectionId);
+
     }
 }
