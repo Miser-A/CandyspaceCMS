@@ -1,4 +1,7 @@
-﻿namespace CandyspaceCMS.Repositories
+﻿using Sitecore.Data.Items;
+
+namespace CandyspaceCMS.Repositories
+
 {
     public interface ICollectionRepository
     {

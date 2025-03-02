@@ -17,6 +17,7 @@ namespace CandyspaceCMS.Controllers
             _collectionRepository = collectionRepository;
         }
 
+        [Authorize(Roles = "User,Admin")]
         [HttpPost("create")]
         public IActionResult CreateCollection([FromBody] CreateCollectionRequest request)
         {
@@ -27,6 +28,7 @@ namespace CandyspaceCMS.Controllers
             return Ok(new { CollectionId = collectionItem.ID.ToString(), Message = "Collection created successfully" });
         }
 
+        [Authorize(Roles = "User,Admin")]
         [HttpGet]
         public IActionResult GetCollections(int page = 1, int pageSize = 10)
         {
@@ -36,6 +38,17 @@ namespace CandyspaceCMS.Controllers
 
             var collections = _collectionRepository.GetCollectionsByOwner(ownerId, page, pageSize);
             return Ok(collections);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("{id}")]
+        public IActionResult DeleteCollection(string id)
+        {
+            var collection = _collectionRepository.GetCollectionById(id);
+            if (collection == null) return NotFound("Collection not found.");
+
+            _collectionRepository.DeleteCollection(id);
+            return Ok("Collection deleted.");
         }
 
         [HttpPut("{id}/items")]
